@@ -12,7 +12,36 @@ const tokens = (n) => {
 }
 
 async function main() {
+  const [deployer] = await ethers.getSigners()
 
+  const Dappazon = await hre.ethers.getContractFactory("Dappazon")
+  const dappazon = await Dappazon.deploy()
+  await dappazon.deployed()
+
+  console.log(`Deployed Contract at: ${dappazon.address}\n`)
+  
+  const response = await fetch('https://fakestoreapi.com/products');
+  const data = await response.json();
+  // console.log(data.length)
+  // console.log( Math.ceil(data[0].rating.rate))
+  for(let i=0; i< data.length;i++){
+    var prices = new Array();
+    prices[i] =data[i].price.toString()
+    const transaction = await dappazon.connect(deployer).list(
+      data[i].id,
+      data[i].title,
+      data[i].category,
+      data[i].description,
+      data[i].image,
+      tokens(prices[i]),
+      Math.ceil(data[i].rating.rate),
+      data[i].rating.count
+    )
+
+    await transaction.wait()
+
+    console.log(`listed items ${data[i].id} : ${data[i].title}`)
+  }
 }
 
 // We recommend this pattern to be able to use async/await everywhere
